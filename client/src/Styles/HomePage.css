@@ -1,0 +1,30 @@
+/* client/src/Styles/HomePage.css */
+
+.homepage-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* 💡 This is the key change */
+    width: 100%;
+}
+
+.search-and-buttons {
+    /* To control the space between these elements */
+    gap: 1rem;
+    flex-grow: 1; /* Allow this container to take up available space */
+    justify-content: center; /* Center the elements */
+}
+
+.input-group {
+    max-width: 400px; /* Limit the width of the search bar */
+}
+
+.app-title {
+    /* Center the title by default */
+    text-align: center;
+    flex-grow: 1; /* Allow it to take up space */
+}
+
+.profile-dropdown {
+    /* Ensure the dropdown button is always visible */
+    margin-left: auto;
+}

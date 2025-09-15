@@ -1,0 +1,39 @@
+/* client/src/Styles/ChatNavbar.css */
+
+.chat-navbar {
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.profile-icon {
+    width: 40px;
+    height: 40px;
+    background-color: #007bff; /* आप अपनी पसंद का रंग चुन सकते हैं */
+    color: white;
+    border-radius: 50%; /* इसे गोलाकार बनाता है */
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-align: center;
+    line-height: 40px; /* अक्षर को बीच में रखता है */
+    overflow: hidden; /* 💡 ये भी जरूरी है ताकि img इसके अंदर रहे */
+}
+
+/* 💡 New CSS for the profile image */
+.profile-icon .profile-img {
+    width: 100%; /* 💡 कंटेनर के आकार के बराबर हो */
+    height: 100%; /* 💡 कंटेनर के आकार के बराबर हो */
+    object-fit: cover; /* 💡 इमेज को स्ट्रेच किए बिना भरें */
+    border-radius: 50%; /* 💡 इमेज को भी गोल करें */
+}
+
+.online-dot {
+    height: 8px;
+    width: 8px;
+    background-color: #28a745; /* Green color for online */
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-text {
+    font-size: 0.8rem;
+}

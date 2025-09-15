@@ -1,0 +1,80 @@
+/* client/src/Styles/ChatPage.css */
+
+/* Video and Image preview styling */
+.media-preview-video {
+    position: relative;
+    cursor: pointer;
+    max-width: 350px;
+    max-height: 300px;
+}
+
+/* Play icon styling for video */
+.media-preview-video::after {
+    content: '\f04b';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3rem;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: 50%;
+    width: 4rem;
+    height: 4rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.media-preview-video:hover::after {
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.media-preview-image {
+    max-width: 300px;
+    max-height: 300px;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+/* --- */
+
+/* Chat message bubble styling */
+/* 💡 UPDATED: .chat-history .d-flex selector for alignment */
+.chat-history .d-flex {
+    align-items: flex-end; /* Aligns all content to the bottom of the line */
+}
+
+/* Container for the small profile icon */
+.chat-profile-icon-wrapper {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+}
+
+.profile-img-small {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.profile-icon-small {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-color: #007bff;
+    color: white;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Adjusting the message bubble to align with the icons */
+.chat-history .p-2 {
+    margin-bottom: 8px !important;
+}

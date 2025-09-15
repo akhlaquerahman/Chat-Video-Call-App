@@ -1,0 +1,77 @@
+.media-viewer-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+}
+
+.media-viewer-content {
+    position: relative;
+    /* 💡 UPDATED: Making the container more flexible */
+    max-width: 95vw;
+    max-height: 95vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.media-item-img {
+    /* 💡 UPDATED: Set max-width and max-height to 100% to fill parent */
+    max-width: 100%;
+    max-height: 100%;
+    width: auto; /* Allow image to take its natural width */
+    height: auto; /* Allow image to take its natural height */
+    object-fit: contain;
+}
+.media-item-video {
+    /* 💡 UPDATED: Set max-width and max-height to 100% to fill parent */
+    max-width: 100%;
+    max-height: 100%;
+    width: 30%; /* Allow image to take its natural width */
+    height: auto; /* Allow image to take its natural height */
+    object-fit: contain;
+}
+
+.close-btn {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    z-index: 1060;
+}
+
+.unsupported-file {
+    text-align: center;
+    color: white;
+}
+
+.unsupported-file a {
+    color: #4dc247;
+}
+
+/* Additional styles for responsiveness */
+@media (max-width: 768px) {
+    .media-viewer-content {
+        max-width: 90vw;
+        max-height: 90vh;
+    }
+    .media-item-video {
+        width: 60%; /* Adjust video width for smaller screens */
+    }
+
+    .close-btn {
+        top: 10px;
+        right: 15px;
+        font-size: 1.5rem;
+    }
+}
