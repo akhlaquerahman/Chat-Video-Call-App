@@ -9,6 +9,8 @@ import EditProfileForm from './EditProfileForm';
 import '../Styles/HomePage.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 // 💡 HomePage अब `setCurrentUser` को एक प्रॉप के रूप में लेता है
 const HomePage = ({ token, setToken, socket, setCurrentUser }) => {
     const [incomingCall, setIncomingCall] = useState(null);
@@ -79,7 +81,7 @@ const HomePage = ({ token, setToken, socket, setCurrentUser }) => {
         const isConfirmed = window.confirm('Are you sure you want to delete your account? This action cannot be undone.');
         if (isConfirmed) {
             try {
-                await axios.delete(`http://localhost:5000/api/users/${localUser.id}`, {
+                await axios.delete(`${API_URL}api/users/${localUser.id}`, {
                     headers: { 'x-auth-token': token }
                 });
                 alert('Your account has been deleted.');
@@ -114,7 +116,7 @@ const HomePage = ({ token, setToken, socket, setCurrentUser }) => {
         }
 
         try {
-            const res = await axios.get(`http://localhost:5000/api/users/search?query=${searchQuery}`);
+            const res = await axios.get(`${API_URL}api/users/search?query=${searchQuery}`);
             setSearchResults(res.data);
         } catch (err) {
             console.error('Error searching for users:', err);

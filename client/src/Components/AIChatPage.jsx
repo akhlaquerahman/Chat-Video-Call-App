@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import '../Styles/AIChatPage.css';
-import { jwtDecode } from 'jwt-decode';
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 const AIChatPage = () => {
     const [messages, setMessages] = useState([]);
@@ -20,7 +21,7 @@ const AIChatPage = () => {
         if (!token) return;
 
         try {
-            const response = await axios.get('http://localhost:5000/api/ai-chat/ai-history', {
+            const response = await axios.get(`${API_URL}api/ai-chat/ai-history`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -57,7 +58,7 @@ const AIChatPage = () => {
         setIsLoading(true);
 
         try {
-            const response = await axios.post('http://localhost:5000/api/ai-chat', {
+            const response = await axios.post(`${API_URL}api/ai-chat`, {
                 userMessage: input,
             }, {
                 headers: {
@@ -97,7 +98,7 @@ const AIChatPage = () => {
         if (isConfirmed) {
             try {
                 const token = localStorage.getItem('token');
-                await axios.delete('http://localhost:5000/api/ai-chat/delete-history', {
+                await axios.delete(`${API_URL}api/ai-chat/delete-history`, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }

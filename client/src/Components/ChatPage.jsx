@@ -7,6 +7,8 @@ import MediaViewer from './MediaViewer';
 import axios from 'axios';
 import '../Styles/ChatPage.css';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const ChatPage = ({ socket }) => {
     const { otherUserId, otherUserUsername } = useParams();
     const navigate = useNavigate();
@@ -63,7 +65,7 @@ const ChatPage = ({ socket }) => {
         const fetchUserData = async () => {
             // Fetch other user's profile data
             try {
-                const res = await axios.get(`http://localhost:5000/api/users/${otherUserId}`);
+                const res = await axios.get(`${API_URL}api/users/${otherUserId}`);
                 setOtherUserProfileImg(res.data.profileImg);
             } catch (err) {
                 console.error('Error fetching other user details:', err);
@@ -225,7 +227,7 @@ const ChatPage = ({ socket }) => {
             formData.append('media', selectedFile);
 
             try {
-                const res = await axios.post('http://localhost:5000/api/uploads/media', formData, {
+                const res = await axios.post(`${API_URL}api/uploads/media`, formData, {
                     headers: {
                         'Content-Type': 'multipart/form-data',
                     },
@@ -267,7 +269,7 @@ const ChatPage = ({ socket }) => {
         if (isConfirmed) {
             try {
                 const token = localStorage.getItem('token');
-                await axios.delete(`http://localhost:5000/api/chat/${roomName}`, {
+                await axios.delete(`${API_URL}api/chat/${roomName}`, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }

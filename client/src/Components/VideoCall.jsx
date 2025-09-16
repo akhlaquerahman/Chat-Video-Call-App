@@ -4,6 +4,8 @@ import Video from 'twilio-video';
 import axios from 'axios';
 import '../Styles/VideoCall.css'; 
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const VideoCall = () => {
     const { roomName, identity } = useParams();
     const navigate = useNavigate();
@@ -20,7 +22,7 @@ const VideoCall = () => {
     useEffect(() => {
         const joinRoom = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/twilio_token?identity=${identity}&roomName=${roomName}`);
+                const response = await axios.get(`${API_URL}twilio_token?identity=${identity}&roomName=${roomName}`);
                 const token = response.data.token;
 
                 const newRoom = await Video.connect(token, {

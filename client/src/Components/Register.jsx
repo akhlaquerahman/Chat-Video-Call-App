@@ -4,6 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../Styles/AuthForm.css';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const Register = () => {
     const [formData, setFormData] = useState({
         username: '',
@@ -34,7 +36,7 @@ const Register = () => {
                 form.append('profileImg', profileImg);
             }
             
-            const res = await axios.post('http://localhost:5000/api/auth/register', form, {
+            const res = await axios.post(`${API_URL}api/auth/register`, form, {
                 headers: {
                     'Content-Type': 'multipart/form-data', // 💡 Set Content-Type header for file upload
                 },

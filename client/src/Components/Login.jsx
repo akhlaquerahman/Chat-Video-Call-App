@@ -5,6 +5,8 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import '../Styles/AuthForm.css';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const Login = ({ setToken }) => {
   const [formData, setFormData] = useState({
     email: '',
@@ -19,7 +21,7 @@ const Login = ({ setToken }) => {
   const onSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', formData);
+      const res = await axios.post(`${API_URL}api/auth/login`, formData);
       localStorage.setItem('token', res.data.token);
       alert('Login successful!');
       setToken(res.data.token);

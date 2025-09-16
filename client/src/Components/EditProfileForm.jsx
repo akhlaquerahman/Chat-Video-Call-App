@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const EditProfileForm = ({ currentUser, onProfileUpdated, onCancelEdit }) => {
     // State values are correctly initialized from the props
     const [newUsername, setNewUsername] = useState(currentUser.username);
@@ -59,7 +61,7 @@ const EditProfileForm = ({ currentUser, onProfileUpdated, onCancelEdit }) => {
 
             const token = localStorage.getItem('token');
 
-            const res = await axios.put(`http://localhost:5000/api/users/${currentUser.id}`, formData, {
+            const res = await axios.put(`${API_URL}api/users/${currentUser.id}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     'x-auth-token': token

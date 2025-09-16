@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import '../Styles/UserList.css'; 
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const UserList = ({ socket, searchResults, isSearching }) => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -21,7 +23,7 @@ const UserList = ({ socket, searchResults, isSearching }) => {
                 const decoded = jwtDecode(token);
                 socket.emit('register_identity', decoded.user.username);
             }
-            const res = await axios.get('http://localhost:5000/api/users/list');
+            const res = await axios.get(`${API_URL}api/users/list`);
             setUsers(res.data);
             setLoading(false);
         } catch (err) {
@@ -32,7 +34,7 @@ const UserList = ({ socket, searchResults, isSearching }) => {
 
     const fetchLastSeen = useCallback(async (username) => {
         try {
-            const res = await axios.get(`http://localhost:5000/api/users/get-last-seen?username=${username}`);
+            const res = await axios.get(`${API_URL}api/users/get-last-seen?username=${username}`);
             setLastSeenStatuses(prev => ({
                 ...prev,
                 [username]: res.data.lastSeen ? `last seen ${new Date(res.data.lastSeen).toLocaleString()}` : 'offline'

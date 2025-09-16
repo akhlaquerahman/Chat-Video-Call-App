@@ -4,6 +4,8 @@ import axios from 'axios';
 import MediaViewer from './MediaViewer';
 import '../Styles/UserDetail.css';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 const UserDetail = () => {
     const { userId } = useParams();
     const navigate = useNavigate();
@@ -16,13 +18,13 @@ const UserDetail = () => {
         const fetchUserAndMedia = async () => {
             try {
                 // 💡 Fetch user details
-                const userRes = await axios.get(`http://localhost:5000/api/users/${userId}`);
+                const userRes = await axios.get(`${API_URL}api/users/${userId}`);
                 setUser(userRes.data);
 
                 // 💡 Fetch media shared with this user
                 const token = localStorage.getItem('token');
                 if (token) {
-                    const mediaRes = await axios.get(`http://localhost:5000/api/chat/media/${userId}`, {
+                    const mediaRes = await axios.get(`${API_URL}api/chat/media/${userId}`, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     setMedia(mediaRes.data);
