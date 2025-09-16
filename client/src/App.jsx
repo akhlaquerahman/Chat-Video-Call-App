@@ -13,7 +13,7 @@ import VideoCall from './Components/VideoCall';
 import AIChatPage from './Components/AIChatPage';
 import UserDetail from './Components/UserDetail';
 
-const socket = io('http://localhost:5000'); 
+const socket = io('https://chat-video-call-app-f1lq.onrender.com'); 
 
 function App() {
     const [token, setToken] = useState(localStorage.getItem('token') || '');
