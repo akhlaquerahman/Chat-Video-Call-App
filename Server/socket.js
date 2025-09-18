@@ -16,55 +16,61 @@ function initializeSocket(io) {
             onlineUsers.add(identity);
             console.log(`Identity '${identity}' registered with socket ID: ${socket.id}`);
             
-            // Update lastSeen to null when user comes online
+            // 💡 NEW: Update lastSeen to null when user comes online
             await User.findOneAndUpdate({ username: identity }, { lastSeen: null });
 
+            // 💡 UPDATED: Broadcast the updated list of online users to everyone
             io.emit('online_users_list', Array.from(onlineUsers));
+
         });
         
-        // Event to request a specific user's status
+        // 💡 NEW: Event to request a specific user's status (we need this for last seen)
         socket.on('request_user_status', async ({ targetUser }) => {
             const isOnline = onlineUsers.has(targetUser);
+            let status;
+            
             if (isOnline) {
-                socket.emit('initial_status', { identity: targetUser, status: 'online' });
+                status = 'online';
             } else {
                 try {
                     const user = await User.findOne({ username: targetUser });
                     if (user && user.lastSeen) {
-                        // 💡 UPDATED: Send the raw timestamp
-                        socket.emit('initial_status', { identity: targetUser, status: 'last seen', timestamp: user.lastSeen });
+                        status = `last seen ${new Date(user.lastSeen).toLocaleString()}`;
                     } else {
-                        socket.emit('initial_status', { identity: targetUser, status: 'offline' });
+                        status = 'offline';
                     }
                 } catch (error) {
                     console.error('Error fetching last seen status from DB:', error);
-                    socket.emit('initial_status', { identity: targetUser, status: 'offline' });
+                    status = 'offline';
                 }
             }
+            socket.emit('initial_status', { identity: targetUser, status });
         });
 
+        // ... (other socket events like typing, stop_typing, call_user) ...
         socket.on('typing', ({ roomName, typingUser }) => {
             socket.to(roomName).emit('user_typing_update', { identity: typingUser, status: 'typing' });
         });
 
         socket.on('stop_typing', async ({ roomName, typingUser }) => {
             const isOnline = onlineUsers.has(typingUser);
+            let status;
             if (isOnline) {
-                socket.to(roomName).emit('user_typing_update', { identity: typingUser, status: 'online' });
+                status = 'online';
             } else {
                 try {
                     const user = await User.findOne({ username: typingUser });
                     if (user && user.lastSeen) {
-                        // 💡 UPDATED: Send the raw timestamp
-                        socket.to(roomName).emit('user_typing_update', { identity: typingUser, status: 'last seen', timestamp: user.lastSeen });
+                        status = `last seen ${new Date(user.lastSeen).toLocaleString()}`;
                     } else {
-                        socket.to(roomName).emit('user_typing_update', { identity: typingUser, status: 'offline' });
+                        status = 'offline';
                     }
                 } catch (error) {
                     console.error('Error fetching last seen status from DB:', error);
-                    socket.to(roomName).emit('user_typing_update', { identity: typingUser, status: 'offline' });
+                    status = 'offline';
                 }
             }
+            socket.to(roomName).emit('user_typing_update', { identity: typingUser, status: status });
         });
 
         socket.on('call_user', ({ userToCall, roomName, callerIdentity, callType }) => {
@@ -124,13 +130,13 @@ function initializeSocket(io) {
                             { username: identity },
                             { lastSeen: lastSeenTime }
                         );
-                        // 💡 UPDATED: Send the raw timestamp to frontend
-                        io.emit('user_status_update', { identity, status: 'last seen', timestamp: lastSeenTime });
+                        io.emit('user_status_update', { identity, status: `last seen ${lastSeenTime.toLocaleString()}` });
                     } catch (error) {
                         console.error('Error updating last seen status:', error);
                         io.emit('user_status_update', { identity, status: 'offline' });
                     }
                     
+                    // 💡 UPDATED: Broadcast the new list of online users after disconnect
                     io.emit('online_users_list', Array.from(onlineUsers));
                     
                     break;
