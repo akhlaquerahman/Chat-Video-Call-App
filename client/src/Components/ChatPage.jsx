@@ -5,6 +5,7 @@ import ChatNavbar from './ChatNavbar';
 import CallNotification from './CallNotification';
 import MediaViewer from './MediaViewer';
 import axios from 'axios';
+import { formatRelative } from 'date-fns';
 import '../Styles/ChatPage.css';
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -14,7 +15,7 @@ const ChatPage = ({ socket }) => {
     const navigate = useNavigate();
 
     const [currentUserId, setCurrentUserId] = useState(null);
-    const [currentUserProfile, setCurrentUserProfile] = useState(null); // 💡 NEW: State for current user's profile
+    const [currentUserProfile, setCurrentUserProfile] = useState(null);
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [incomingCall, setIncomingCall] = useState(null);
@@ -22,9 +23,11 @@ const ChatPage = ({ socket }) => {
     const [filePreview, setFilePreview] = useState(null);
     const [filePreviewName, setFilePreviewName] = useState('');
 
-    const [lastSeenStatus, setLastSeenStatus] = useState('');
     const [otherUserProfileImg, setOtherUserProfileImg] = useState(null);
     const [otherUserStatus, setOtherUserStatus] = useState('Loading...');
+    
+    // 💡 NEW: Store the raw timestamp here to be used later
+    const [otherUserLastSeenTimestamp, setOtherUserLastSeenTimestamp] = useState(null); 
     
     const [selectedMedia, setSelectedMedia] = useState(null);
 
@@ -44,7 +47,7 @@ const ChatPage = ({ socket }) => {
             try {
                 const decoded = jwtDecode(token);
                 setCurrentUserId(decoded.user.id);
-                setCurrentUserProfile(decoded.user); // 💡 Store the full user object
+                setCurrentUserProfile(decoded.user);
                 socket.emit('register_identity', decoded.user.username);
             } catch (err) {
                 console.error("Error decoding token:", err);
@@ -63,7 +66,6 @@ const ChatPage = ({ socket }) => {
     // 💡 Second useEffect for chat logic and fetching data
     useEffect(() => {
         const fetchUserData = async () => {
-            // Fetch other user's profile data
             try {
                 const res = await axios.get(`${API_URL}api/users/${otherUserId}`);
                 setOtherUserProfileImg(res.data.profileImg);
@@ -78,18 +80,27 @@ const ChatPage = ({ socket }) => {
                 socket.emit('join_chat_room', roomName);
             }
             
+            // 💡 UPDATED: Pass the username when requesting status
             socket.emit('request_user_status', { targetUser: otherUserUsername });
 
-            socket.on('initial_status', ({ identity, status }) => {
+            // 💡 UPDATED: Use timestamp to format status
+            socket.on('initial_status', ({ identity, status, timestamp }) => {
                 if (identity === otherUserUsername) {
-                    if (status.startsWith('last seen')) {
-                        setLastSeenStatus(status);
+                    if (status === 'online') {
+                        setOtherUserStatus('online');
+                        setOtherUserLastSeenTimestamp(null);
+                    } else if (status === 'last seen' && timestamp) {
+                        const formattedTime = formatRelative(new Date(timestamp), new Date());
+                        const newStatus = `last seen ${formattedTime}`;
+                        setOtherUserStatus(newStatus);
+                        setOtherUserLastSeenTimestamp(timestamp); // Store the timestamp
+                    } else {
+                        setOtherUserStatus('offline');
+                        setOtherUserLastSeenTimestamp(null);
                     }
-                    setOtherUserStatus(status);
                 }
             });
 
-            // This is where chat history is fetched from the backend.
             socket.on('receive_message_history', (history) => {
                 setMessages(history);
             });
@@ -98,25 +109,33 @@ const ChatPage = ({ socket }) => {
                 setMessages(prev => [...prev, message]);
             });
 
-            socket.on('user_status_update', ({ identity, status }) => {
+            // 💡 UPDATED: Use timestamp to format status
+            socket.on('user_status_update', ({ identity, status, timestamp }) => {
                 if (identity === otherUserUsername) {
                     if (status === 'online') {
                         setOtherUserStatus('online');
-                        setLastSeenStatus('');
-                    } else if (status.startsWith('last seen')) {
-                        setOtherUserStatus(status);
-                        setLastSeenStatus(status);
+                        setOtherUserLastSeenTimestamp(null);
+                    } else if (status === 'last seen' && timestamp) {
+                        const formattedTime = formatRelative(new Date(timestamp), new Date());
+                        const newStatus = `last seen ${formattedTime}`;
+                        setOtherUserStatus(newStatus);
+                        setOtherUserLastSeenTimestamp(timestamp); // Store the timestamp
+                    } else {
+                        setOtherUserStatus('offline');
+                        setOtherUserLastSeenTimestamp(null);
                     }
                 }
             });
 
+            // 💡 UPDATED: Use the stored timestamp when typing stops
             socket.on('user_typing_update', ({ identity, status }) => {
                 if (identity === otherUserUsername) {
                     if (status === 'typing') {
                         setOtherUserStatus('typing...');
                     } else {
-                        if (lastSeenStatus) {
-                            setOtherUserStatus(lastSeenStatus);
+                        if (otherUserLastSeenTimestamp) {
+                            const formattedTime = formatRelative(new Date(otherUserLastSeenTimestamp), new Date());
+                            setOtherUserStatus(`last seen ${formattedTime}`);
                         } else {
                             setOtherUserStatus('online');
                         }
@@ -134,7 +153,7 @@ const ChatPage = ({ socket }) => {
                 socket.off('initial_status');
             };
         }
-    }, [socket, currentUserId, otherUserId, createRoomName, otherUserUsername, lastSeenStatus, currentUserProfile]);
+    }, [socket, currentUserId, otherUserId, createRoomName, otherUserUsername, otherUserLastSeenTimestamp, currentUserProfile]);
 
     const handleMediaClick = (media) => {
         setSelectedMedia(media);
@@ -324,19 +343,16 @@ const ChatPage = ({ socket }) => {
                 {messages.map((msg, index) => {
                     const isSender = (msg.senderId && msg.senderId._id) ? msg.senderId._id === currentUserId : msg.senderId === currentUserId;
                     
-                    // 💡 NEW: Get sender's profile data
                     const senderProfile = isSender ? currentUserProfile : { username: otherUserUsername, profileImg: otherUserProfileImg };
 
                     return (
                         <div key={index} className={`d-flex align-items-end ${isSender ? 'justify-content-end' : 'justify-content-start'}`}>
-                            {/* 💡 RENDER profile icon for the other user */}
                             {!isSender && (
                                 <div className="chat-profile-icon-wrapper me-2">
                                     {renderProfileIcon(senderProfile)}
                                 </div>
                             )}
                             <div className={`p-2 rounded mb-2 ${isSender ? 'bg-success text-white' : 'bg-light text-dark'}`} style={{ maxWidth: '75%' }}>
-                                {/* 💡 REMOVED: 'You' or 'username' */}
                                 {msg.filePath && (
                                     <div className="mb-2" onClick={() => handleMediaClick({ filePath: msg.filePath, fileType: msg.fileType })}>
                                         {msg.fileType === 'image' ? (
@@ -357,7 +373,6 @@ const ChatPage = ({ socket }) => {
                                     </small>
                                 )}
                             </div>
-                            {/* 💡 RENDER profile icon for the current user */}
                             {isSender && (
                                 <div className="chat-profile-icon-wrapper ms-2">
                                     {renderProfileIcon(senderProfile)}
