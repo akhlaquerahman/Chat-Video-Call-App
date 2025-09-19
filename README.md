@@ -153,7 +153,7 @@ npm start
 # From the 'Client' directory
 npm start
 
-Live Demo :- https://chat-video-call-app-six.vercel.app/
+# Live Demo :- https://chat-video-call-app-six.vercel.app/
 
 # 6. Contact & About the Author
 This project was built and is maintained by Akhlaque.
@@ -162,4 +162,4 @@ GitHub: https://github.com/akhlaquerahman
 
 LinkedIn: https://www.linkedin.com/in/akhlaquerahman
 
-Email: akhlaquerahman0786@.com
+Email: akhlaquerahman0786@gmail.com
