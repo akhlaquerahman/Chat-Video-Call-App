@@ -1,4 +1,3 @@
-// Server/models/User.js
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
@@ -14,6 +13,11 @@ const UserSchema = new mongoose.Schema({
         unique: true,
         trim: true,
     },
+    phoneNumber: {
+        type: String,
+        required: false,
+        trim: true,
+    },
     password: {
         type: String,
         required: true,
@@ -22,8 +26,27 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: false,
     },
-    // 💡 NEW: Add lastSeen field to the User model
+    profileImgFileId: {
+        type: String,
+        required: false,
+    },
+    about: {
+        type: String,
+        default: "Hey there! I'm using WhatsApp.",
+    },
     lastSeen: {
+        type: Date,
+        default: null,
+    },
+    isVerified: {
+        type: Boolean,
+        default: false,
+    },
+    otp: {
+        type: String,
+        default: null,
+    },
+    otpExpires: {
         type: Date,
         default: null,
     },

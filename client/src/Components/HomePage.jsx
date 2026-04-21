@@ -2,27 +2,31 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
-import UserList from './UserList';
+import ChatList from './ChatList';
+import ChatArea from './ChatArea';
 import CallNotification from './CallNotification';
 import ProfileDropdown from './ProfileDropdown'; 
 import EditProfileForm from './EditProfileForm';
+import StarredMessages from './StarredMessages';
+import SettingsModal from './SettingsModal';
+import API_URL from '../apiConfig';
 import '../Styles/HomePage.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-const API_URL = process.env.REACT_APP_API_URL;
-
-// 💡 HomePage अब `setCurrentUser` को एक प्रॉप के रूप में लेता है
-const HomePage = ({ token, setToken, socket, setCurrentUser }) => {
+const HomePage = ({ token, setToken, socket, setCurrentUser, isDarkMode, toggleDarkMode, unreadCounts, setUnreadCounts, lastMessageTimes, setLastMessageTimes }) => {
     const [incomingCall, setIncomingCall] = useState(null);
-    const [localUser, setLocalUser] = useState(null); // लोकल स्टेट का उपयोग करें
-    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [localUser, setLocalUser] = useState(null); 
+    const [activeModal, setActiveModal] = useState(null); // 'profile', 'starred', 'privacy', 'notifications', 'help', 'about'
     
-    // 💡 NEW: State for search functionality
+    // Search functionality
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
     const [searchResults, setSearchResults] = useState([]);
 
-    // 💡 NEW: State for room functionality
+    // Selected user in chat
+    const [selectedUser, setSelectedUser] = useState(null);
+
+    // Room functionality
     const [showRoomModal, setShowRoomModal] = useState(false);
     const [roomName, setRoomName] = useState('');
     const [callType, setCallType] = useState('video');
@@ -32,32 +36,31 @@ const HomePage = ({ token, setToken, socket, setCurrentUser }) => {
     const logout = useCallback(() => {
         localStorage.removeItem('token');
         setToken('');
-        setCurrentUser(null); // 💡 Global state को भी अपडेट करें
+        setCurrentUser(null); 
         setLocalUser(null);
         setIncomingCall(null);
+        setUnreadCounts({});
         navigate('/');
-    }, [setToken, navigate, setCurrentUser]);
+    }, [setToken, navigate, setCurrentUser, setUnreadCounts]);
 
     useEffect(() => {
         if (token) {
-            axios.defaults.headers.common['x-auth-token'] = token;
+            axios.defaults.headers.common.Authorization = `Bearer ${token}`;
             try {
                 const decoded = jwtDecode(token);
                 const currentTime = Date.now() / 1000;
                 if (decoded.exp < currentTime) {
-                    console.error('Token expired, logging out.');
                     logout();
                 } else {
                     setLocalUser(decoded.user);
-                    setCurrentUser(decoded.user); // 💡 Global state को अपडेट करें
-                    socket.emit('register_identity', decoded.user.username);
+                    setCurrentUser(decoded.user); 
                 }
             } catch (error) {
                 console.error('Failed to decode token:', error);
                 logout(); 
             }
         } else {
-            delete axios.defaults.headers.common['x-auth-token'];
+            delete axios.defaults.headers.common.Authorization;
         }
         
         socket.on('incoming_call', ({ roomName, callerIdentity, callType }) => {
@@ -69,52 +72,53 @@ const HomePage = ({ token, setToken, socket, setCurrentUser }) => {
         };
     }, [token, socket, logout, setCurrentUser]);
 
+    useEffect(() => {
+        if (!socket || !localUser?.id) return;
+        // The unreadCounts logic is now handled in App.jsx globally
+    }, [socket, localUser, selectedUser]);
+
     const handleAnswerCall = () => {
         if (incomingCall) {
-            const callType = incomingCall.callType || 'video';
-            navigate(`/call/${incomingCall.roomName}/${localUser.username}?type=${callType}`);
+            const type = incomingCall.callType || 'video';
+            navigate(`/call/${incomingCall.roomName}/${localUser.username}?type=${type}`);
             setIncomingCall(null);
         }
     };
-    
-    const handleDeleteAccount = async () => {
-        const isConfirmed = window.confirm('Are you sure you want to delete your account? This action cannot be undone.');
-        if (isConfirmed) {
-            try {
-                await axios.delete(`${API_URL}api/users/${localUser.id}`, {
-                    headers: { 'x-auth-token': token }
-                });
-                alert('Your account has been deleted.');
-                logout();
-            } catch (err) {
-                console.error('Error deleting account:', err);
-                alert('Failed to delete account.');
-            }
+
+    const handleDropdownAction = (id) => {
+        if (id === 'dark-mode') {
+            toggleDarkMode();
+        } else {
+            setActiveModal(id);
         }
     };
 
-    const handleEditProfile = () => {
-        setIsEditingProfile(true);
-    };
-
-    const handleProfileUpdated = (updatedUser) => {
+    const handleProfileUpdated = (updatedUser, newToken) => {
+        if (newToken) {
+            setToken(newToken);
+        }
         setLocalUser(updatedUser);
-        setCurrentUser(updatedUser); // 💡 Global state को भी अपडेट करें
-        setIsEditingProfile(false);
+        setCurrentUser(updatedUser); 
+        setActiveModal(null);
     };
 
-    const handleCancelEdit = () => {
-        setIsEditingProfile(false);
+    const handleSelectUser = (user) => {
+        setSelectedUser(user);
+        if (!user?._id) return;
+        setUnreadCounts((prev) => {
+            if (!prev[user._id]) return prev;
+            const next = { ...prev };
+            delete next[user._id];
+            return next;
+        });
     };
 
-    // 💡 NEW: Search functionality functions
     const handleSearch = async () => {
         if (!searchQuery.trim()) {
-            setSearchResults([]); // Clear results if search query is empty
+            setSearchResults([]);
             setIsSearching(false);
             return;
         }
-
         try {
             const res = await axios.get(`${API_URL}api/users/search?query=${searchQuery}`);
             setSearchResults(res.data);
@@ -126,14 +130,12 @@ const HomePage = ({ token, setToken, socket, setCurrentUser }) => {
 
     const toggleSearch = () => {
         setIsSearching(!isSearching);
-        // Clear search state when closing the search bar
         if (isSearching) {
             setSearchQuery('');
             setSearchResults([]);
         }
     };
     
-    // 💡 NEW: Room functionality handlers
     const handleCreateRoom = () => {
         if (!roomName.trim()) {
             alert('Please enter a room name.');
@@ -150,7 +152,6 @@ const HomePage = ({ token, setToken, socket, setCurrentUser }) => {
         navigate(`/call/${roomName}/${localUser.username}?type=${callType}`);
     };
     
-    // A small idea: add a unique room name generator
     const generateUniqueRoomName = () => {
         const uniqueId = Math.random().toString(36).substring(2, 8);
         setRoomName(`Room-${uniqueId}`);
@@ -158,108 +159,147 @@ const HomePage = ({ token, setToken, socket, setCurrentUser }) => {
 
     return (
         <div className="App">
-  <header className="App-header">
-    <div className='d-flex align-items-center justify-content-between py-3 px-3 border-bottom bg-light homepage-header'>
-      {/* App title */}
-      <h2 className="mb-0 me-3">My Chat Video Call App</h2>
+            <header className="App-header">
+                <div className="homepage-header">
+                    <div className="homepage-brand">
+                        <div className="brand-badge">
+                            <i className="fas fa-comments"></i>
+                        </div>
+                        <div className="brand-copy">
+                            <h2>My Chat App</h2>
+                            <p>{localUser ? `Signed in as ${localUser.username}` : 'Secure chat, calls and media sharing'}</p>
+                        </div>
+                    </div>
 
-      {/* Right side elements with minimal spacing */}
-      <div className="d-flex align-items-center" style={{ gap: '8px' }}>
-        {/* Search button and bar */}
-        <div className="d-flex align-items-center">
-          <button className="btn btn-outline-secondary" onClick={toggleSearch}>
-            <i className="fas fa-search"></i>
-          </button>
-          {isSearching && (
-            <div className="search-bar ms-2">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search users..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyUp={handleSearch}
-              />
+                    <div className="homepage-actions">
+                        <button className={`header-action-btn ${isSearching ? 'active' : ''}`} type="button" onClick={toggleSearch}>
+                            <i className="fas fa-search"></i>
+                            <span>Search</span>
+                        </button>
+
+                        <button className="header-action-btn join-room-btn" type="button" onClick={() => setShowRoomModal(true)}>
+                            <i className="fas fa-video"></i>
+                            <span>Join Room</span>
+                        </button>
+
+                        {localUser && (
+                            <ProfileDropdown 
+                                user={localUser} 
+                                onLogout={logout} 
+                                onAction={handleDropdownAction}
+                            />
+                        )}
+                    </div>
+                </div>
+
+                {isSearching && (
+                    <div className="homepage-search-panel">
+                        <div className="homepage-search-input">
+                            <i className="fas fa-search"></i>
+                            <input
+                                type="text"
+                                placeholder="Search users..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyUp={handleSearch}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                <CallNotification incomingCall={incomingCall} handleAnswerCall={handleAnswerCall} />
+            </header>
+            
+            <div className="chat-layout">
+                <div className={`chat-sidebar ${selectedUser ? 'mobile-hidden' : ''}`}>
+                    <ChatList 
+                        socket={socket} 
+                        searchResults={searchResults} 
+                        isSearching={isSearching} 
+                        onUserSelect={handleSelectUser}
+                        selectedUser={selectedUser}
+                        unreadCounts={unreadCounts}
+                        lastMessageTimes={lastMessageTimes}
+                    />
+                </div>
+                <div className={`chat-main ${selectedUser ? 'mobile-active' : 'mobile-hidden'}`}>
+                    <ChatArea 
+                        socket={socket} 
+                        selectedUser={selectedUser} 
+                        currentUser={localUser} 
+                        onBackToList={() => setSelectedUser(null)}
+                        isDarkMode={isDarkMode}
+                        setLastMessageTimes={setLastMessageTimes}
+                    />
+                </div>
             </div>
-          )}
+
+            {/* Modals */}
+            {activeModal === 'profile' && (
+                <EditProfileForm 
+                    currentUser={localUser}
+                    onProfileUpdated={handleProfileUpdated}
+                    onCancelEdit={() => setActiveModal(null)}
+                />
+            )}
+            {activeModal === 'starred' && (
+                <StarredMessages 
+                    isDarkMode={isDarkMode}
+                    onClose={() => setActiveModal(null)}
+                />
+            )}
+            {['privacy', 'notifications', 'help', 'about'].includes(activeModal) && (
+                <SettingsModal 
+                    type={activeModal}
+                    onClose={() => setActiveModal(null)}
+                />
+            )}
+            
+            {showRoomModal && (
+                <div className="modal show d-block" tabIndex="-1" role="dialog">
+                    <div className="modal-dialog" role="document">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">Create or Join a Room</h5>
+                                <button type="button" className="btn-close" onClick={() => setShowRoomModal(false)} aria-label="Close"></button>
+                            </div>
+                            <div className="modal-body">
+                                <div className="mb-3">
+                                    <label htmlFor="roomName" className="form-label">Room Name</label>
+                                    <input 
+                                        type="text" 
+                                        className="form-input" 
+                                        id="roomName" 
+                                        placeholder="Enter or create a room name" 
+                                        value={roomName}
+                                        onChange={(e) => setRoomName(e.target.value)}
+                                    />
+                                </div>
+                                <div className="mb-3">
+                                    <label htmlFor="callType" className="form-label">Call Type</label>
+                                    <select 
+                                        className="form-select" 
+                                        id="callType" 
+                                        value={callType}
+                                        onChange={(e) => setCallType(e.target.value)}
+                                    >
+                                        <option value="video">Video Call</option>
+                                        <option value="audio">Audio Call</option>
+                                    </select>
+                                </div>
+                                <button className="btn btn-secondary mt-2 w-100" onClick={generateUniqueRoomName}>
+                                    Generate Unique Room Name
+                                </button>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-primary" onClick={handleCreateRoom}>Create Room</button>
+                                <button type="button" className="btn btn-success" onClick={handleJoinRoom}>Join Room</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-        
-        {/* Join Room button */}
-        <button className="btn btn-info text-white" onClick={() => setShowRoomModal(true)}>
-          <i className="fas fa-video me-1"></i>Join
-        </button>
-        
-        {/* Profile dropdown */}
-        {localUser && (
-          <ProfileDropdown 
-            user={localUser} 
-            onLogout={logout} 
-            onDeleteAccount={handleDeleteAccount}
-            onEditProfile={handleEditProfile}
-          />
-        )}
-      </div>
-    </div>
-    <CallNotification incomingCall={incomingCall} handleAnswerCall={handleAnswerCall} />
-  </header>
-  
-  {/* Rest of the component remains the same */}
-  {isEditingProfile ? (
-    <EditProfileForm 
-      currentUser={localUser}
-      onProfileUpdated={handleProfileUpdated}
-      onCancelEdit={handleCancelEdit}
-    />
-  ) : (
-    <UserList socket={socket} searchResults={searchResults} isSearching={isSearching} />
-  )}
-  
-  {/* Modal for Creating/Joining Rooms */}
-  {showRoomModal && (
-    <div className="modal show d-block" tabIndex="-1" role="dialog">
-      <div className="modal-dialog" role="document">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h5 className="modal-title">Create or Join a Room</h5>
-            <button type="button" className="btn-close" onClick={() => setShowRoomModal(false)} aria-label="Close"></button>
-          </div>
-          <div className="modal-body">
-            <div className="mb-3">
-              <label htmlFor="roomName" className="form-label">Room Name</label>
-              <input 
-                type="text" 
-                className="form-control" 
-                id="roomName" 
-                placeholder="Enter or create a room name" 
-                value={roomName}
-                onChange={(e) => setRoomName(e.target.value)}
-              />
-            </div>
-            <div className="mb-3">
-              <label htmlFor="callType" className="form-label">Call Type</label>
-              <select 
-                className="form-select" 
-                id="callType" 
-                value={callType}
-                onChange={(e) => setCallType(e.target.value)}
-              >
-                <option value="video">Video Call</option>
-                <option value="audio">Audio Call</option>
-              </select>
-            </div>
-            <button className="btn btn-secondary mt-2 w-100" onClick={generateUniqueRoomName}>
-              Generate Unique Room Name
-            </button>
-          </div>
-          <div className="modal-footer">
-            <button type="button" className="btn btn-primary" onClick={handleCreateRoom}>Create Room</button>
-            <button type="button" className="btn btn-success" onClick={handleJoinRoom}>Join Room</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )}
-</div>
     );
 };
 

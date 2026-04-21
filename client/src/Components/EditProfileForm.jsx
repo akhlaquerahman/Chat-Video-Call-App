@@ -1,18 +1,57 @@
-// client/src/Components/EditProfileForm.jsx
-
 import React, { useState } from 'react';
 import axios from 'axios';
-
-const API_URL = process.env.REACT_APP_API_URL;
+import API_URL from '../apiConfig';
+import '../Styles/ModernProfile.css';
 
 const EditProfileForm = ({ currentUser, onProfileUpdated, onCancelEdit }) => {
-    // State values are correctly initialized from the props
-    const [newUsername, setNewUsername] = useState(currentUser.username);
-    const [newEmail, setNewEmail] = useState(currentUser.email);
-    const [newProfileImg, setNewProfileImg] = useState(undefined); // 💡 State initialized as `undefined` instead of `null`
-    
-    // State to manage a visual preview of the new image
+    const [formData, setFormData] = useState({
+        username: currentUser.username || '',
+        email: currentUser.email || '',
+        phoneNumber: currentUser.phoneNumber || '',
+        about: currentUser.about || "Hey there! I'm using WhatsApp.",
+    });
+    const [newProfileImg, setNewProfileImg] = useState(undefined);
     const [imagePreview, setImagePreview] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState('general'); // 'general' or 'security'
+    
+    // Password change states
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmNewPassword, setConfirmNewPassword] = useState('');
+
+    const handlePasswordChange = async () => {
+        if (!currentPassword || !newPassword || !confirmNewPassword) {
+            alert('Please fill all password fields');
+            return;
+        }
+        if (newPassword !== confirmNewPassword) {
+            alert('New passwords do not match');
+            return;
+        }
+        if (newPassword.length < 6) {
+            alert('New password must be at least 6 characters');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(`${API_URL}api/users/change-password`, 
+                { currentPassword, newPassword },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            alert('Password updated successfully!');
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmNewPassword('');
+        } catch (err) {
+            console.error('Password change error:', err.response?.data);
+            alert(err.response?.data?.msg || 'Failed to update password');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
@@ -23,140 +62,218 @@ const EditProfileForm = ({ currentUser, onProfileUpdated, onCancelEdit }) => {
                 setImagePreview(reader.result);
             };
             reader.readAsDataURL(file);
-        } else {
-            // If the user clears the file input
-            setNewProfileImg(null); // Set to `null` to indicate removal
-            setImagePreview(null);
         }
+    };
+
+    const handleRemovePic = () => {
+        setNewProfileImg(null); // Indicates removal
+        setImagePreview('removed'); // Special state for UI
+    };
+
+    const onChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleSaveEdit = async (e) => {
         e.preventDefault();
+        setLoading(true);
         try {
-            const formData = new FormData();
+            const data = new FormData();
+            data.append('username', formData.username);
+            data.append('email', formData.email);
+            data.append('phoneNumber', formData.phoneNumber);
+            data.append('about', formData.about);
             
-            // Append only if values have changed
-            if (newUsername !== currentUser.username) {
-                formData.append('username', newUsername);
-            }
-            if (newEmail !== currentUser.email) {
-                formData.append('email', newEmail);
-            }
-
-            // 💡 Corrected logic for profile picture
             if (newProfileImg) {
-                // If a new picture is selected
-                formData.append('profileImg', newProfileImg);
-            } else if (newProfileImg === null && currentUser.profileImg) {
-                // Only send 'remove' flag if the user explicitly cleared the input
-                formData.append('removeProfilePic', 'true');
-            }
-            
-            // If no changes are made, we can exit early.
-            if (formData.get('username') === null && formData.get('email') === null && newProfileImg === undefined) {
-                 alert('No changes were made.');
-                 onCancelEdit();
-                 return;
+                data.append('profileImg', newProfileImg);
+            } else if (newProfileImg === null) {
+                data.append('removeProfilePic', 'true');
             }
 
             const token = localStorage.getItem('token');
-
-            const res = await axios.put(`${API_URL}api/users/${currentUser.id}`, formData, {
+            const res = await axios.put(`${API_URL}api/users/${currentUser.id}`, data, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
-                    'x-auth-token': token
+                    Authorization: `Bearer ${token}`
                 },
             });
             
-            // 💡 NEW: Update the localStorage with the new token
             if (res.data.token) {
                 localStorage.setItem('token', res.data.token);
             }
             
-            // Update the state with the response data
-            // 💡 We'll now pass the `res.data.user` object which contains updated user details.
-            onProfileUpdated(res.data.user);
-            
+            onProfileUpdated(res.data.user, res.data.token);
             alert('Profile updated successfully!');
             onCancelEdit();
         } catch (err) {
             console.error('Error updating user:', err.response?.data);
-            alert('Failed to update profile.');
+            alert(err.response?.data?.msg || 'Failed to update profile.');
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="container mt-4">
-            <h2 className="text-center mb-4">Edit Profile</h2>
-            <form onSubmit={handleSaveEdit}>
-                {/* 💡 Display current or new profile picture */}
-                <div className="text-center mb-3">
-                    {imagePreview ? (
-                        <img 
-                            src={imagePreview} 
-                            alt="New Profile" 
-                            style={{ 
-                                width: '100px', 
-                                height: '100px', 
-                                borderRadius: '50%',
-                                objectFit: 'cover'
-                            }} 
-                        />
-                    ) : currentUser.profileImg ? (
-                        <img 
-                            src={currentUser.profileImg}
-                            alt="Current Profile" 
-                            style={{ 
-                                width: '100px', 
-                                height: '100px', 
-                                borderRadius: '50%',
-                                objectFit: 'cover'
-                            }} 
-                        />
+        <div className="modal-overlay">
+            <div className="profile-modal shadow-lg">
+                <div className="modal-header">
+                    <div className="d-flex align-items-center">
+                        <i className="fas fa-user-edit me-3"></i>
+                        <h2 className="mb-0">Profile Settings</h2>
+                    </div>
+                    <button className="modal-close-icon" onClick={onCancelEdit}>✕</button>
+                </div>
+
+                <div className="modal-tabs">
+                    <button 
+                        className={`tab-btn ${activeTab === 'general' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('general')}
+                    >
+                        General Info
+                    </button>
+                    <button 
+                        className={`tab-btn ${activeTab === 'security' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('security')}
+                    >
+                        Security
+                    </button>
+                </div>
+
+                <div className="modal-scroll-body">
+                    {activeTab === 'general' ? (
+                        <form id="profile-form" onSubmit={handleSaveEdit} className="p-4">
+                            <div className="text-center mb-4">
+                                <div className="avatar-edit-wrapper">
+                                    <div className="profile-avatar-circle large-avatar">
+                                        {imagePreview === 'removed' ? (
+                                            <span>{formData.username?.charAt(0).toUpperCase()}</span>
+                                        ) : imagePreview ? (
+                                            <img src={imagePreview} alt="Preview" />
+                                        ) : currentUser.profileImg ? (
+                                            <img src={currentUser.profileImg} alt="Current" />
+                                        ) : (
+                                            <span>{formData.username?.charAt(0).toUpperCase()}</span>
+                                        )}
+                                    </div>
+                                    <label htmlFor="modal-upload" className="camera-icon-badge">
+                                        <i className="fas fa-camera"></i>
+                                    </label>
+                                    <input id="modal-upload" type="file" hidden onChange={handleFileChange} accept="image/*" />
+                                </div>
+                                <div className="mt-2">
+                                    <button type="button" className="text-danger border-0 bg-transparent small" onClick={handleRemovePic}>
+                                        Remove Photo
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="form-group mb-3">
+                                <label className="form-label text-wa-green">Username</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    name="username"
+                                    value={formData.username}
+                                    onChange={onChange}
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group mb-3">
+                                <label className="form-label text-wa-green">About</label>
+                                <textarea
+                                    className="form-input"
+                                    name="about"
+                                    rows="2"
+                                    value={formData.about}
+                                    onChange={onChange}
+                                    style={{resize: 'none'}}
+                                ></textarea>
+                                <small className="text-muted">Visible to your contacts.</small>
+                            </div>
+
+                            <div className="form-group mb-3">
+                                <label className="form-label text-wa-green">Email</label>
+                                <input
+                                    type="email"
+                                    className="form-input"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={onChange}
+                                    disabled
+                                    title="Email cannot be changed"
+                                />
+                            </div>
+                            
+                            <div className="form-group mb-4">
+                                <label className="form-label text-wa-green">Phone Number</label>
+                                <input
+                                    type="tel"
+                                    className="form-input"
+                                    name="phoneNumber"
+                                    value={formData.phoneNumber}
+                                    onChange={onChange}
+                                />
+                            </div>
+                        </form>
                     ) : (
-                        <div style={{ width: '100px', height: '100px', borderRadius: '50%', backgroundColor: '#ccc', display: 'inline-block' }}></div>
+                        <div className="p-4 security-section">
+                            <div className="security-header mb-4">
+                                <h3>Account Security</h3>
+                                <p className="text-muted small">Manage your password to keep your account secure.</p>
+                            </div>
+
+                            <div className="form-group mb-3">
+                                <label className="form-label">Current Password</label>
+                                <input
+                                    type="password"
+                                    className="form-input"
+                                    value={currentPassword}
+                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                    placeholder="Verify current password"
+                                />
+                            </div>
+                            <div className="form-group mb-3">
+                                <label className="form-label">New Password</label>
+                                <input
+                                    type="password"
+                                    className="form-input"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="At least 6 characters"
+                                />
+                            </div>
+                            <div className="form-group mb-4">
+                                <label className="form-label">Confirm New Password</label>
+                                <input
+                                    type="password"
+                                    className="form-input"
+                                    value={confirmNewPassword}
+                                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                                    placeholder="Repeat new password"
+                                />
+                            </div>
+                            <button 
+                                type="button" 
+                                className="btn-save w-100" 
+                                onClick={handlePasswordChange}
+                                disabled={loading}
+                            >
+                                {loading ? "Updating..." : "Update Password"}
+                            </button>
+                        </div>
                     )}
-                    <p className="mt-2 text-muted">Current Profile Picture</p>
                 </div>
-                
-                <div className="mb-3">
-                    <label className="form-label">Username</label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        value={newUsername}
-                        onChange={(e) => setNewUsername(e.target.value)}
-                        required
-                    />
+
+                <div className="modal-footer px-4 py-3">
+                    <button type="button" className="btn-cancel" onClick={onCancelEdit}>Cancel</button>
+                    {activeTab === 'general' && (
+                        <button type="submit" form="profile-form" className="btn-save" disabled={loading}>
+                            {loading ? "Saving..." : "Save Changes"}
+                        </button>
+                    )}
                 </div>
-                <div className="mb-3">
-                    <label className="form-label">Email</label>
-                    <input
-                        type="email"
-                        className="form-control"
-                        value={newEmail}
-                        onChange={(e) => setNewEmail(e.target.value)}
-                        required
-                    />
-                </div>
-                <div className="mb-3">
-                    <label className="form-label">Update Profile Picture</label>
-                    <input
-                        type="file"
-                        className="form-control"
-                        onChange={handleFileChange}
-                        accept="image/*"
-                    />
-                </div>
-                <div className="d-flex justify-content-end">
-                    <button type="button" className="btn btn-secondary me-2" onClick={onCancelEdit}>
-                        Cancel
-                    </button>
-                    <button type="submit" className="btn btn-primary">
-                        Save Changes
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
     );
 };

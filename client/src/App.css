@@ -1,0 +1,105 @@
+/* App.css Global Styles */
+.dark-mode-root {
+  background-color: #111b21;
+  color: #e9edef;
+  min-height: 100vh;
+}
+
+.dark-mode-root .chat-layout {
+  background-color: #0b141a;
+}
+
+.dark-mode-root .chat-sidebar {
+  background-color: #111b21;
+  border-color: #222d34;
+}
+
+.dark-mode-root .chat-main {
+  background-color: #0b141a;
+}
+
+.dark-mode-root .homepage-header {
+  background-color: #202c33;
+  color: #e9edef;
+  border-bottom: 1px solid #222d34;
+}
+
+.dark-mode-root .brand-copy h2 { color: #e9edef; }
+.dark-mode-root .brand-copy p { color: #8696a0; }
+
+.dark-mode-root .header-action-btn {
+  color: #aebac1;
+}
+
+.dark-mode-root .header-action-btn:hover {
+  background: #2a3942;
+}
+
+.dark-mode-root .chat-page-container {
+  background-color: #0b141a;
+}
+
+/* Scrollbar Dark Mode */
+.dark-mode-root ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dark-mode-root ::-webkit-scrollbar-track {
+  background: #111b21;
+}
+
+.dark-mode-root ::-webkit-scrollbar-thumb {
+  background: #374045;
+  border-radius: 3px;
+}
+
+.dark-mode-root ::-webkit-scrollbar-thumb:hover {
+  background: #4a5459;
+}
+
+/* Global Dark Mode Overrides */
+.dark-mode .text-muted, 
+.dark-mode small {
+  color: #8696a0 !important;
+}
+
+.dark-mode .border,
+.dark-mode .border-top,
+.dark-mode .border-bottom {
+  border-color: #222d34 !important;
+}
+
+.dark-mode input, 
+.dark-mode textarea, 
+.dark-mode select {
+  background-color: #2a3942 !important;
+  color: #e9edef !important;
+  border-color: #3b4a54 !important;
+}
+
+.dark-mode .bg-light {
+  background-color: #202c33 !important;
+  color: #e9edef !important;
+}
+
+.dark-mode .modal-content {
+  background-color: #202c33;
+  color: #e9edef;
+  border: 1px solid #3b4a54;
+}
+
+.dark-mode .modal-header,
+.dark-mode .modal-footer {
+  border-color: #3b4a54;
+}
+
+.dark-mode .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+.dark-mode .chat-history {
+  background-color: #0b141a !important; /* WhatsApp dark chat background */
+  background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+  background-blend-mode: overlay;
+}

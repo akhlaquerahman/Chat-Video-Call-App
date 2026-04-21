@@ -1,5 +1,4 @@
-// server.js
-
+const dns = require('dns');
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -10,53 +9,55 @@ const { Server } = require('socket.io');
 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
-const initializeSocket = require('./socket'); 
+const initializeSocket = require('./socket');
 const chatRoutes = require('./routes/chatRoutes');
-const mediaRoutes = require('./routes/mediaRoutes'); // New import
+const mediaRoutes = require('./routes/mediaRoutes');
 const aiChatRoutes = require('./routes/aiChatRoutes');
 
-const path = require('path'); 
-
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const server = http.createServer(app);
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'https://chat-video-call-app-six.vercel.app',
+    process.env.CLIENT_URL,
+].filter(Boolean);
 
-const io = new Server(server, {
-    cors: {
-        origin: "https://chat-video-call-app-six.vercel.app",
-        methods: ["GET", "POST"]
-    }
-});
+const corsOptions = {
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+            return;
+        }
+
+        callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    credentials: true,
+};
+
+const server = http.createServer(app);
+const io = new Server(server, { cors: corsOptions });
 
 initializeSocket(io);
 
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
-  .then(() => console.log('MongoDB connected successfully.'))
-  .catch(err => console.error('MongoDB connection error:', err));
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log('MongoDB connected successfully.'))
+    .catch((err) => console.error('MongoDB connection error:', err));
 
 app.use(express.json());
-app.use(cors());
+app.use(cors(corsOptions));
 
-// 💡 NEW: Use the new AI Chat routes under a base path
 app.use('/api/ai-chat', aiChatRoutes);
-
-
-
-
-
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
-app.use('/api/uploads', mediaRoutes); // New: use the media routes
+app.use('/api/uploads', mediaRoutes);
 
-
-// Twilio token route
 app.get('/twilio_token', (req, res) => {
     const { identity, roomName } = req.query;
 
@@ -68,18 +69,15 @@ app.get('/twilio_token', (req, res) => {
         process.env.TWILIO_ACCOUNT_SID,
         process.env.TWILIO_API_KEY_SID,
         process.env.TWILIO_API_KEY_SECRET,
-        { identity: identity }
+        { identity }
     );
 
-    const videoGrant = new twilio.jwt.AccessToken.VideoGrant({
-        room: roomName
-    });
-
+    const videoGrant = new twilio.jwt.AccessToken.VideoGrant({ room: roomName });
     accessToken.addGrant(videoGrant);
 
-    res.json({ token: accessToken.toJwt() });
+    return res.json({ token: accessToken.toJwt() });
 });
 
 server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });

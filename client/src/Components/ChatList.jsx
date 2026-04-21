@@ -1,17 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
-import '../Styles/UserList.css'; 
+import API_URL from '../apiConfig';
+import '../Styles/ChatList.css'; 
 
-const API_URL = process.env.REACT_APP_API_URL;
-
-const UserList = ({ socket, searchResults, isSearching }) => {
+const ChatList = ({ socket, searchResults, isSearching, onUserSelect, selectedUser, unreadCounts = {}, lastMessageTimes = {} }) => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
-    // 💡 NEW: State to store the list of online users
     const [onlineUsers, setOnlineUsers] = useState(new Set());
-    // 💡 NEW: State to store last seen status
     const [lastSeenStatuses, setLastSeenStatuses] = useState({});
     
     const navigate = useNavigate();
@@ -19,22 +15,30 @@ const UserList = ({ socket, searchResults, isSearching }) => {
     const fetchUsers = useCallback(async () => {
         try {
             const token = localStorage.getItem('token');
-            if (token) {
-                const decoded = jwtDecode(token);
-                socket.emit('register_identity', decoded.user.username);
+            if (!token) {
+                setLoading(false);
+                return;
             }
-            const res = await axios.get(`${API_URL}api/users/list`);
+
+            const res = await axios.get(`${API_URL}api/users/list`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
             setUsers(res.data);
             setLoading(false);
         } catch (err) {
             console.error('Error fetching users:', err);
             setLoading(false);
         }
-    }, [socket]);
+    }, []);
 
     const fetchLastSeen = useCallback(async (username) => {
         try {
-            const res = await axios.get(`${API_URL}api/users/get-last-seen?username=${username}`);
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            const res = await axios.get(`${API_URL}api/users/get-last-seen?username=${username}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
             setLastSeenStatuses(prev => ({
                 ...prev,
                 [username]: res.data.lastSeen ? `last seen ${new Date(res.data.lastSeen).toLocaleString()}` : 'offline'
@@ -53,12 +57,10 @@ const UserList = ({ socket, searchResults, isSearching }) => {
             fetchUsers();
         }
         
-        // 💡 NEW: Listen for the full list of online users
         socket.on('online_users_list', (onlineUsernames) => {
             setOnlineUsers(new Set(onlineUsernames));
         });
 
-        // 💡 NEW: Listen for individual status updates
         socket.on('user_status_update', ({ identity, status, lastSeen }) => {
             if (status.startsWith('last seen')) {
                 setLastSeenStatuses(prev => ({
@@ -86,14 +88,13 @@ const UserList = ({ socket, searchResults, isSearching }) => {
 
 
     const handleViewUser = (user) => {
-        navigate(`/chat/${user._id}/${user.username}`);
+        if (onUserSelect) {
+            onUserSelect(user);
+        } else {
+            navigate(`/chat/${user._id}/${user.username}`);
+        }
     };
-    
-    const handleAIChat = () => {
-        navigate('/ai-chat');
-    };
-    
-    // 💡 NEW: Function to navigate to UserDetail page
+
     const handleViewUserDetail = (user) => {
         navigate(`/user-detail/${user._id}`);
     };
@@ -108,28 +109,51 @@ const UserList = ({ socket, searchResults, isSearching }) => {
         return firstLetter;
     };
 
-    const usersToDisplay = isSearching ? searchResults : users;
+    const rawUsers = isSearching ? searchResults : users;
+    const usersToDisplay = [...rawUsers].sort((a, b) => {
+        const timeA = Math.max(
+            lastMessageTimes[a._id] || 0,
+            a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
+        );
+        const timeB = Math.max(
+            lastMessageTimes[b._id] || 0,
+            b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+        );
+        return timeB - timeA;
+    });
 
     return (
-        <div className="container mt-4">
+        <div className="chat-list-container">
             {loading && !isSearching ? (
                 <p className="text-center">Loading users...</p>
             ) : (
-                <ul className="list-group">
+                <ul className="chat-list">
                     {usersToDisplay.length > 0 ? (
                         usersToDisplay.map((user) => {
                             const isOnline = onlineUsers.has(user.username);
-                            const statusText = isOnline ? 'Online' : lastSeenStatuses[user.username] || 'Loading...';
+                            const unreadCount = unreadCounts[user._id] || 0;
+                            
+                            // 💡 Improved status logic: check real-time state first, then initially fetched user data
+                            const lastSeenData = lastSeenStatuses[user.username];
+                            let statusText = isOnline ? 'Online' : 'offline';
+                            
+                            if (!isOnline) {
+                                if (lastSeenData) {
+                                    statusText = lastSeenData;
+                                } else if (user.lastSeen) {
+                                    statusText = `last seen ${new Date(user.lastSeen).toLocaleString()}`;
+                                }
+                            }
                             
                             return (
                                 <li 
                                     key={user._id} 
-                                    className="user-item list-group-item d-flex align-items-center" 
+                                    className={`user-item ${selectedUser && selectedUser._id === user._id ? 'selected' : ''}`}
                                     onClick={() => handleViewUser(user)}
                                 >
                                     <div className="d-flex align-items-center flex-grow-1">
                                         <div className="user-profile-icon-container me-3" onClick={(e) => {
-                                            e.stopPropagation(); // Prevents the list item from being clicked
+                                            e.stopPropagation(); 
                                             handleViewUserDetail(user);
                                         }}>
                                             <div className="user-profile-icon d-flex align-items-center justify-content-center">
@@ -138,7 +162,10 @@ const UserList = ({ socket, searchResults, isSearching }) => {
                                             {isOnline && <div className="online-dot"></div>}
                                         </div>
                                         <div className="user-info">
-                                            <h5 className="mb-0">{user.username}</h5>
+                                            <div className="user-meta-row">
+                                                <h5 className="mb-0">{user.username}</h5>
+                                                {unreadCount > 0 && <span className="unread-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+                                            </div>
                                             <small className="text-muted">{statusText}</small>
                                         </div>
                                     </div>
@@ -150,12 +177,8 @@ const UserList = ({ socket, searchResults, isSearching }) => {
                     )}
                 </ul>
             )}
-            
-            <button className="btn btn-primary chat-ai-btn" onClick={handleAIChat}>
-                <i className="fas fa-robot me-2"></i> Chat with AI
-            </button>
         </div>
     );
 };
 
-export default UserList;
+export default ChatList;

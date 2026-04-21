@@ -1,39 +1,138 @@
-/* client/src/Styles/ChatNavbar.css */
-
 .chat-navbar {
-    background-color: #f8f9fa;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-height: 72px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #f4efe4 0%, #f6faf7 50%, #eef8f4 100%);
+    border-bottom: 1px solid rgba(17, 27, 33, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
 }
 
-.profile-icon {
-    width: 40px;
-    height: 40px;
-    background-color: #007bff; /* आप अपनी पसंद का रंग चुन सकते हैं */
-    color: white;
-    border-radius: 50%; /* इसे गोलाकार बनाता है */
-    font-size: 1.2rem;
-    font-weight: bold;
-    text-align: center;
-    line-height: 40px; /* अक्षर को बीच में रखता है */
-    overflow: hidden; /* 💡 ये भी जरूरी है ताकि img इसके अंदर रहे */
+.chat-navbar-user {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+    cursor: pointer;
 }
 
-/* 💡 New CSS for the profile image */
-.profile-icon .profile-img {
-    width: 100%; /* 💡 कंटेनर के आकार के बराबर हो */
-    height: 100%; /* 💡 कंटेनर के आकार के बराबर हो */
-    object-fit: cover; /* 💡 इमेज को स्ट्रेच किए बिना भरें */
-    border-radius: 50%; /* 💡 इमेज को भी गोल करें */
+.chat-navbar-avatar {
+    position: relative;
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
+    background: linear-gradient(145deg, #008069 0%, #0fb995 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    font-weight: 700;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 12px 24px rgba(0, 128, 105, 0.16);
 }
 
-.online-dot {
-    height: 8px;
-    width: 8px;
-    background-color: #28a745; /* Green color for online */
+.chat-navbar-avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.chat-navbar-presence {
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 13px;
+    height: 13px;
+    border: 2px solid #f6faf7;
     border-radius: 50%;
-    display: inline-block;
+    background: #25d366;
 }
 
-.status-text {
+.chat-navbar-copy {
+    min-width: 0;
+}
+
+.chat-navbar-copy h5 {
+    margin: 0;
+    color: #111b21;
+    font-size: 1rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-navbar-copy small {
+    display: block;
+    margin-top: 2px;
+    color: #667781;
     font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.chat-navbar-action {
+    width: 42px;
+    height: 42px;
+    border: 0;
+    border-radius: 14px;
+    background: #fff;
+    color: #496169;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 22px rgba(17, 27, 33, 0.08);
+    cursor: pointer;
+}
+
+.chat-navbar-action.primary {
+    background: #008069;
+    color: #fff;
+}
+
+.chat-navbar-action.delete {
+    color: #c24f4a;
+}
+
+@media (max-width: 768px) {
+    .chat-navbar {
+        padding: 10px 12px;
+        gap: 10px;
+    }
+
+    .chat-navbar-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 14px;
+    }
+
+    .chat-navbar-copy h5 {
+        font-size: 0.94rem;
+    }
+
+    .chat-navbar-copy small {
+        font-size: 0.75rem;
+    }
+
+    .chat-navbar-action {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+    }
 }

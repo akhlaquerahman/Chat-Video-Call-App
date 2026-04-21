@@ -5,9 +5,8 @@ import ChatNavbar from './ChatNavbar';
 import CallNotification from './CallNotification';
 import MediaViewer from './MediaViewer';
 import axios from 'axios';
+import API_URL from '../apiConfig';
 import '../Styles/ChatPage.css';
-
-const API_URL = process.env.REACT_APP_API_URL;
 
 const ChatPage = ({ socket }) => {
     const { otherUserId, otherUserUsername } = useParams();

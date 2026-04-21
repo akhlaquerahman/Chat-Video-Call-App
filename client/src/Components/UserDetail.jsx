@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import MediaViewer from './MediaViewer';
+import API_URL from '../apiConfig';
 import '../Styles/UserDetail.css';
-
-const API_URL = process.env.REACT_APP_API_URL;
 
 const UserDetail = () => {
     const { userId } = useParams();

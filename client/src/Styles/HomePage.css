@@ -1,30 +1,294 @@
-/* client/src/Styles/HomePage.css */
-
 .homepage-header {
     display: flex;
     align-items: center;
-    justify-content: space-between; /* 💡 This is the key change */
-    width: 100%;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 14px 18px;
+    background:
+        linear-gradient(135deg, #f4efe4 0%, #f8fbf7 45%, #eef8f4 100%);
+    border-bottom: 1px solid rgba(17, 27, 33, 0.08);
 }
 
-.search-and-buttons {
-    /* To control the space between these elements */
-    gap: 1rem;
-    flex-grow: 1; /* Allow this container to take up available space */
-    justify-content: center; /* Center the elements */
+.homepage-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
 }
 
-.input-group {
-    max-width: 400px; /* Limit the width of the search bar */
+.brand-badge {
+    width: 50px;
+    height: 50px;
+    border-radius: 18px;
+    background: linear-gradient(145deg, #008069 0%, #0fb995 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: 0 12px 24px rgba(0, 128, 105, 0.18);
+    flex-shrink: 0;
 }
 
-.app-title {
-    /* Center the title by default */
-    text-align: center;
-    flex-grow: 1; /* Allow it to take up space */
+.brand-copy {
+    min-width: 0;
 }
 
-.profile-dropdown {
-    /* Ensure the dropdown button is always visible */
-    margin-left: auto;
+.brand-copy h2 {
+    margin: 0;
+    color: #111b21;
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.15;
+}
+
+.brand-copy p {
+    margin: 3px 0 0;
+    color: #5b6b73;
+    font-size: 0.86rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.homepage-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.header-action-btn {
+    min-height: 42px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 999px;
+    background: #fff;
+    color: #1f2d34;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 10px 22px rgba(17, 27, 33, 0.08);
+    cursor: pointer;
+    transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.header-action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(17, 27, 33, 0.12);
+}
+
+.header-action-btn.active {
+    background: #dff6eb;
+    color: #006b59;
+}
+
+.join-room-btn {
+    background: #008069;
+    color: #fff;
+}
+
+.homepage-search-panel {
+    padding: 0 18px 14px;
+    background:
+        linear-gradient(135deg, #f4efe4 0%, #f8fbf7 45%, #eef8f4 100%);
+    border-bottom: 1px solid rgba(17, 27, 33, 0.06);
+}
+
+.homepage-search-input {
+    max-width: 520px;
+    height: 48px;
+    padding: 0 14px;
+    border-radius: 18px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #6a7b83;
+    box-shadow: 0 10px 24px rgba(17, 27, 33, 0.08);
+}
+
+.homepage-search-input input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: #111b21;
+    outline: none;
+    font-size: 0.94rem;
+}
+
+.chat-layout {
+    display: flex;
+    height: calc(100vh - 98px);
+    min-height: 0;
+    background: #fff;
+}
+
+.chat-sidebar {
+    width: 31%;
+    min-width: 320px;
+    border-right: 1px solid #e6ecef;
+    overflow-y: auto;
+    background: #fff;
+}
+
+.chat-main {
+    width: 69%;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: #fff;
+}
+
+@media (max-width: 900px) {
+    .homepage-header {
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    .homepage-brand,
+    .homepage-actions {
+        width: 100%;
+    }
+
+    .homepage-actions {
+        justify-content: space-between;
+    }
+
+    .header-action-btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .chat-layout {
+        height: calc(100vh - 154px);
+    }
+
+    .chat-sidebar {
+        width: 38%;
+        min-width: 280px;
+    }
+
+    .chat-main {
+        width: 62%;
+    }
+}
+
+@media (max-width: 768px) {
+    .homepage-header {
+        gap: 14px;
+        padding: 12px;
+    }
+
+    .brand-badge {
+        width: 44px;
+        height: 44px;
+        border-radius: 15px;
+    }
+
+    .brand-copy h2 {
+        font-size: 1.08rem;
+    }
+
+    .brand-copy p {
+        font-size: 0.78rem;
+        white-space: normal;
+    }
+
+    .homepage-actions {
+        gap: 8px;
+    }
+
+    .header-action-btn {
+        min-height: 40px;
+        padding: 0 12px;
+        font-size: 0.82rem;
+    }
+
+    .header-action-btn span {
+        display: none;
+    }
+
+    .homepage-search-panel {
+        padding: 0 12px 12px;
+    }
+
+    .homepage-search-input {
+        height: 44px;
+        border-radius: 14px;
+    }
+
+    .chat-layout {
+        height: calc(100vh - 154px);
+        overflow: hidden;
+    }
+
+    .chat-sidebar,
+    .chat-main {
+        width: 100%;
+        min-width: 0;
+        height: 100%;
+    }
+
+    .chat-sidebar.mobile-hidden,
+    .chat-main.mobile-hidden {
+        display: none;
+    }
+
+    .chat-main.mobile-active {
+        display: flex;
+    }
+}
+
+/* Dark Mode Overrides */
+.dark-mode .homepage-header {
+    background: #202c33;
+    border-bottom: 1px solid #222d34;
+}
+
+.dark-mode .brand-copy h2 {
+    color: #e9edef;
+}
+
+.dark-mode .brand-copy p {
+    color: #8696a0;
+}
+
+.dark-mode .header-action-btn {
+    background: #2a3942;
+    color: #aebac1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .header-action-btn:hover {
+    background: #3b4a54;
+}
+
+.dark-mode .header-action-btn.active {
+    background: #202c33;
+    color: #00a884;
+}
+
+.dark-mode .homepage-search-panel {
+    background: #202c33;
+    border-bottom-color: #222d34;
+}
+
+.dark-mode .homepage-search-input {
+    background: #2a3942;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .homepage-search-input input {
+    color: #e9edef;
+}
+
+.dark-mode .chat-layout,
+.dark-mode .chat-sidebar,
+.dark-mode .chat-main {
+    background: #111b21;
+    border-color: #222d34;
 }

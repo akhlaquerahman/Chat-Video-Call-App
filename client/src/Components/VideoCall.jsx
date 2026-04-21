@@ -2,9 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import Video from 'twilio-video';
 import axios from 'axios';
+import API_URL from '../apiConfig';
 import '../Styles/VideoCall.css'; 
-
-const API_URL = process.env.REACT_APP_API_URL;
 
 const VideoCall = () => {
     const { roomName, identity } = useParams();
